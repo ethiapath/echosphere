@@ -8,10 +8,14 @@ A versatile stereo delay plugin built using JUCE.
 
 EchoSphere is a professional-grade delay VST/AU plugin designed for music producers, mixing engineers, and sound designers. It provides a clean, intuitive interface with powerful delay capabilities.
 
-### Current Features (v0.1.2 - MVP+)
+### Current Features (v0.1.3 - MVP+)
 
 - Basic delay engine with tempo synchronization
-- Ultra-short to long delay times (0.1ms to 2000ms) with logarithmic control
+- Micro-delay capabilities:
+  - Ultra-short delay times (as low as 2 samples/0.045ms at 44.1kHz)
+  - Sample-based display for micro-delays
+  - Enables comb filtering, flanging, and special effects
+- Logarithmic control scaling for precise adjustment at small values
 - Feedback control (0% to 100%)
 - Wet/dry mix control
 - Tempo sync with multiple note values (whole notes to 64th notes, including dotted and triplet)

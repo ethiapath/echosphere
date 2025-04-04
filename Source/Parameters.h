@@ -75,24 +75,34 @@ namespace EchoSphere
         {
             juce::AudioProcessorValueTreeState::ParameterLayout layout;
             
-            // Delay Time: 0.1ms to 2000ms with logarithmic scaling for finer control at small values
+            // Delay Time: From 2 samples up to 2000ms with logarithmic scaling for fine control
             layout.add(std::make_unique<juce::AudioParameterFloat>(
                 ParamIDs::DELAY_TIME,
                 "Delay Time",
-                juce::NormalisableRange<float>(0.1f, 2000.0f, 0.01f, 0.2f),
+                juce::NormalisableRange<float>(0.045f, 2000.0f, 0.001f, 0.15f), // 0.045ms = ~2 samples at 44.1kHz
                 200.0f,
                 juce::String(),
                 juce::AudioProcessorParameter::genericParameter,
                 [](float value, int) { 
-                    // Custom formatting for small values
-                    if (value < 1.0f)
+                    // Custom formatting based on value range
+                    if (value < 0.1f) {
+                        // For extremely small values, show samples (assuming 44.1kHz)
+                        int samples = static_cast<int>(value * 44.1f); // Approximate samples at 44.1kHz
+                        return juce::String(samples) + " samples";
+                    }
+                    else if (value < 1.0f)
                         return juce::String(value, 2) + " ms"; 
                     else if (value < 10.0f)
                         return juce::String(value, 1) + " ms";
                     else
                         return juce::String(int(value)) + " ms";
                 },
-                [](const juce::String& text) { return text.getFloatValue(); }
+                [](const juce::String& text) { 
+                    // Handle both ms and samples input
+                    if (text.containsIgnoreCase("sample"))
+                        return text.getFloatValue() / 44.1f; // Convert samples back to ms
+                    return text.getFloatValue(); 
+                }
             ));
             
             // Feedback: 0% to 100%
