@@ -1,0 +1,6 @@
+This is a placeholder file to ensure the Resources directory exists.
+Resources for the EchoSphere Delay plugin will be placed in this directory, including:
+- Images
+- Logo files
+- Preset files
+- Other binary assets 

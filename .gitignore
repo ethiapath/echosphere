@@ -1,0 +1,70 @@
+# Build directories
+/build/
+/Builds/
+/JuceLibraryCode/
+
+# IDE files
+.idea/
+.vscode/
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.opendb
+*.xcworkspace
+*.xcuserstate
+*.xcsettings
+*.DS_Store
+
+# JUCE Projucer auto-generated files
+Builds/
+
+# Compiled object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled headers
+*.gch
+*.pch
+
+# Compiled dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables and plugin formats
+*.exe
+*.out
+*.app
+*.component
+*.vst
+*.vst3
+*.aax
+*.clap
+
+# macOS specific
+.DS_Store
+._*
+
+# Windows specific
+Thumbs.db
+Desktop.ini
+
+# CMake generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+
+# Custom build directories
+bin/
+out/ 
