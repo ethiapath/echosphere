@@ -2,6 +2,7 @@
 /build/
 /Builds/
 /JuceLibraryCode/
+/crashreports/
 
 # IDE files
 .idea/

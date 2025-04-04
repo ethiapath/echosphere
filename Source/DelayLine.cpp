@@ -9,6 +9,16 @@ namespace EchoSphere
         , delayTimeInSamples(0.0f)
         , lastSample(0.0f)
     {
+        // Initialize the delay line with default parameters and proper ProcessSpec
+        juce::dsp::ProcessSpec spec;
+        spec.sampleRate = currentSampleRate;
+        spec.maximumBlockSize = 512; // Reasonable default
+        spec.numChannels = 1;        // We process one channel at a time
+        
+        // First prepare with proper spec
+        delayLine.prepare(spec);
+        delayLine.setMaximumDelayInSamples(static_cast<int>(currentSampleRate * 5.0)); // 5 seconds at 44.1kHz
+        delayLine.reset();
     }
 
     DelayLine::~DelayLine()
@@ -22,8 +32,14 @@ namespace EchoSphere
         // Calculate maximum delay in samples
         const int maxDelaySamples = static_cast<int>((maxDelayTimeMs / 1000.0) * sampleRate) + 1;
         
-        // Prepare delay line
-        delayLine.reset();
+        // Properly prepare the delay line with ProcessSpec
+        juce::dsp::ProcessSpec spec;
+        spec.sampleRate = sampleRate;
+        spec.maximumBlockSize = 512; // Set a reasonable default block size
+        spec.numChannels = 1;        // We process one channel at a time
+        
+        // Prepare delay line with proper spec
+        delayLine.prepare(spec);
         delayLine.setMaximumDelayInSamples(maxDelaySamples);
         
         // Reset internal state
@@ -50,14 +66,36 @@ namespace EchoSphere
 
     float DelayLine::processSample(float inputSample)
     {
-        // Get delayed sample
-        float delaySample = delayLine.popSample(0, delayTimeInSamples);
+        // Safety check - ensure the delay line is properly initialized
+        if (delayLine.getMaximumDelayInSamples() <= 0)
+            return inputSample; // Pass through if not initialized
+            
+        // Make sure delay time is valid, with a minimum of 1 sample
+        float validDelayTime = juce::jmax(1.0f, juce::jmin(delayTimeInSamples, static_cast<float>(delayLine.getMaximumDelayInSamples() - 1)));
+        
+        // Get delayed sample safely
+        float delaySample;
+        try {
+            delaySample = delayLine.popSample(0, validDelayTime);
+        }
+        catch (...) {
+            // If any exception occurs, reset and pass through
+            reset();
+            return inputSample;
+        }
         
         // Calculate output with feedback
         float outputSample = inputSample + (delaySample * feedback);
         
-        // Push sample to delay line
-        delayLine.pushSample(0, outputSample);
+        // Push sample to delay line safely
+        try {
+            delayLine.pushSample(0, outputSample);
+        }
+        catch (...) {
+            // If any exception occurs, reset and pass through
+            reset();
+            return inputSample;
+        }
         
         // Store for next iteration
         lastSample = delaySample;
@@ -68,9 +106,16 @@ namespace EchoSphere
 
     void DelayLine::processBlock(juce::AudioBuffer<float>& buffer, int channel)
     {
+        // Make sure the channel index is valid
+        if (channel < 0 || channel >= buffer.getNumChannels())
+            return;
+            
         // Process each sample in the buffer for the specified channel
         auto* channelData = buffer.getWritePointer(channel);
         
+        if (channelData == nullptr)
+            return;
+            
         for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
         {
             channelData[sample] = processSample(channelData[sample]);

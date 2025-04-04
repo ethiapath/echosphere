@@ -24,6 +24,21 @@ namespace EchoSphere
 
     void EchoSphereAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
     {
+        // Ensure parameters are valid
+        if (!delayTimeParameter || !feedbackParameter || !mixParameter || !syncParameter || !syncNoteParameter)
+        {
+            // Reinitialize parameter pointers
+            delayTimeParameter = parameters.getRawParameterValue(ParamIDs::DELAY_TIME);
+            feedbackParameter = parameters.getRawParameterValue(ParamIDs::FEEDBACK);
+            mixParameter = parameters.getRawParameterValue(ParamIDs::MIX);
+            syncParameter = parameters.getRawParameterValue(ParamIDs::SYNC);
+            syncNoteParameter = parameters.getRawParameterValue(ParamIDs::SYNC_NOTE);
+            
+            // If still invalid, we can't proceed
+            if (!delayTimeParameter || !feedbackParameter || !mixParameter || !syncParameter || !syncNoteParameter)
+                return;
+        }
+    
         // Resize the delay line vector if needed
         delayLines.clear();
         delayLines.resize(getTotalNumInputChannels());
@@ -60,6 +75,11 @@ namespace EchoSphere
     void EchoSphereAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
     {
         juce::ScopedNoDenormals noDenormals;
+        
+        // Safety check - if no channels or no samples, nothing to do
+        if (buffer.getNumChannels() == 0 || buffer.getNumSamples() == 0)
+            return;
+            
         const auto numChannels = buffer.getNumChannels();
         const auto numSamples = buffer.getNumSamples();
 
@@ -67,18 +87,51 @@ namespace EchoSphere
         for (auto i = getTotalNumInputChannels(); i < getTotalNumOutputChannels(); ++i)
             buffer.clear(i, 0, numSamples);
 
+        // Make sure delayLines is properly initialized
+        if (delayLines.empty() || delayLines.size() < getTotalNumInputChannels())
+        {
+            // If not initialized, re-initialize
+            prepareToPlay(getSampleRate(), buffer.getNumSamples());
+            
+            // If still not initialized properly, just pass through audio
+            if (delayLines.empty())
+                return;
+        }
+        
+        // Check if parameters are valid
+        if (!delayTimeParameter || !feedbackParameter || !mixParameter || !syncParameter || !syncNoteParameter)
+        {
+            // Reinitialize parameter pointers
+            delayTimeParameter = parameters.getRawParameterValue(ParamIDs::DELAY_TIME);
+            feedbackParameter = parameters.getRawParameterValue(ParamIDs::FEEDBACK);
+            mixParameter = parameters.getRawParameterValue(ParamIDs::MIX);
+            syncParameter = parameters.getRawParameterValue(ParamIDs::SYNC);
+            syncNoteParameter = parameters.getRawParameterValue(ParamIDs::SYNC_NOTE);
+            
+            // If still invalid, just pass through audio
+            if (!delayTimeParameter || !feedbackParameter || !mixParameter || !syncParameter || !syncNoteParameter)
+                return;
+        }
+
         // Update parameters if needed
         updateDelayParameters();
 
         // Process each channel through its own delay line
         for (int channel = 0; channel < juce::jmin(numChannels, static_cast<int>(delayLines.size())); ++channel)
         {
-            delayLines[channel].processBlock(buffer, channel);
+            if (channel < buffer.getNumChannels()) // Extra safety check
+            {
+                delayLines[channel].processBlock(buffer, channel);
+            }
         }
     }
 
     void EchoSphereAudioProcessor::updateDelayParameters()
     {
+        // Check if parameters are valid before dereferencing
+        if (!delayTimeParameter || !feedbackParameter || !mixParameter || !syncParameter || !syncNoteParameter)
+            return;
+            
         // Get current parameter values
         float delayTime = *delayTimeParameter;
         float feedback = *feedbackParameter;
@@ -94,17 +147,30 @@ namespace EchoSphere
             auto playHead = getPlayHead();
             if (playHead != nullptr)
             {
+                #if JUCE_VERSION >= 0x060000
+                // JUCE 6.0.0 or later
+                if (auto position = playHead->getPosition())
+                {
+                    if (position->getBpm().hasValue())
+                        bpm = *position->getBpm();
+                }
+                #else
+                // For older JUCE versions
                 juce::AudioPlayHead::CurrentPositionInfo positionInfo;
                 if (playHead->getCurrentPosition(positionInfo))
                 {
                     bpm = positionInfo.bpm;
                 }
+                #endif
             }
 
             delayTime = calculateSyncedDelayTime(static_cast<float>(bpm), syncNoteIndex);
         }
 
         // Update all delay lines with current parameters
+        if (delayLines.empty())
+            return;
+            
         for (auto& delayLine : delayLines)
         {
             delayLine.setDelayTime(delayTime);
