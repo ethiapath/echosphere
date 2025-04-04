@@ -22,6 +22,27 @@ Parameters are organized into logical groups:
 - Sync parameters (sync toggle, note values)
 - Future parameters (filters, modulation, etc.)
 
+### Processor Classes
+
+The plugin's core functionality is implemented through several key processor classes:
+
+1. **EchoSphereAudioProcessor**: Main plugin processor handling all parameter management and plugin lifecycle
+   - Manages parameter state through JUCE's AudioProcessorValueTreeState
+   - Routes audio through the delay processing chain
+   - Handles preset management and state saving/loading
+
+2. **DelayLine**: Core DSP component implementing the delay effect
+   - Manages delay buffer implementation using JUCE's dsp::DelayLine
+   - Handles delay time adjustment, including tempo synchronization 
+   - Processes audio samples with feedback path
+   - Provides wet/dry mix functionality
+   - Implements extensive error handling and stability safeguards:
+     - Proper initialization with JUCE DSP ProcessSpec
+     - Exception safety around audio processing operations
+     - Automatic recovery from potential error states
+     - Minimum delay time enforcement to prevent DSP errors
+     - Null pointer and boundary checks throughout processing chain
+
 ### Delay Engine (`DelayLine.h/cpp`)
 
 The delay engine implements the core DSP functionality:

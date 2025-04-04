@@ -152,6 +152,15 @@ EchoSphere/
 - Simple UI
 - Cross-platform build system
 
+### Stability Improvements (April 2025)
+- Fixed critical stability issues in DelayLine implementation:
+  - Added proper ProcessSpec initialization for JUCE DSP modules
+  - Implemented exception handling and safety checks in audio processing chain
+  - Ensured minimum delay time of 1 sample to prevent DSP errors
+  - Added improved error recovery mechanisms
+- Resolved compatibility issues with Ableton Live and other DAWs
+- Enhanced robustness for different plugin initialization sequences
+
 ### Ready for Testing
 The current implementation is ready for basic testing in host DAWs to verify:
 - Audio processing quality
@@ -159,6 +168,7 @@ The current implementation is ready for basic testing in host DAWs to verify:
 - Preset saving/loading
 - UI functionality
 - Cross-platform compatibility
+- Stability under various conditions
 
 ## Next Steps
 
