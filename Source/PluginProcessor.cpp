@@ -89,9 +89,17 @@ namespace EchoSphere
         // If sync is enabled, calculate delay time based on host tempo
         if (sync)
         {
-            auto bpm = getPlayHead() != nullptr && getPlayHead()->getCurrentPosition().bpm.hasValue()
-                ? *getPlayHead()->getCurrentPosition().bpm
-                : 120.0; // Default to 120 BPM if host doesn't provide tempo
+            double bpm = 120.0; // Default to 120 BPM if host doesn't provide tempo
+            
+            auto playHead = getPlayHead();
+            if (playHead != nullptr)
+            {
+                juce::AudioPlayHead::CurrentPositionInfo positionInfo;
+                if (playHead->getCurrentPosition(positionInfo))
+                {
+                    bpm = positionInfo.bpm;
+                }
+            }
 
             delayTime = calculateSyncedDelayTime(static_cast<float>(bpm), syncNoteIndex);
         }
@@ -255,10 +263,11 @@ namespace EchoSphere
         if (xmlState != nullptr && xmlState->hasTagName(parameters.state.getType()))
             parameters.replaceState(juce::ValueTree::fromXml(*xmlState));
     }
+}
 
-    // This creates new instances of the plugin
-    juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
-    {
-        return new EchoSphereAudioProcessor();
-    }
+// This creates new instances of the plugin
+// This must be outside the namespace so that it can be found by the plugin loader
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
+{
+    return new EchoSphere::EchoSphereAudioProcessor();
 } 
