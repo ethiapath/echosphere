@@ -75,15 +75,23 @@ namespace EchoSphere
         {
             juce::AudioProcessorValueTreeState::ParameterLayout layout;
             
-            // Delay Time: 5ms to 2000ms
+            // Delay Time: 0.1ms to 2000ms with logarithmic scaling for finer control at small values
             layout.add(std::make_unique<juce::AudioParameterFloat>(
                 ParamIDs::DELAY_TIME,
                 "Delay Time",
-                juce::NormalisableRange<float>(5.0f, 2000.0f, 0.1f, 0.3f),
+                juce::NormalisableRange<float>(0.1f, 2000.0f, 0.01f, 0.2f),
                 200.0f,
                 juce::String(),
                 juce::AudioProcessorParameter::genericParameter,
-                [](float value, int) { return juce::String(value, 1) + " ms"; },
+                [](float value, int) { 
+                    // Custom formatting for small values
+                    if (value < 1.0f)
+                        return juce::String(value, 2) + " ms"; 
+                    else if (value < 10.0f)
+                        return juce::String(value, 1) + " ms";
+                    else
+                        return juce::String(int(value)) + " ms";
+                },
                 [](const juce::String& text) { return text.getFloatValue(); }
             ));
             

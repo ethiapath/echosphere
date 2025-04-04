@@ -70,8 +70,13 @@ namespace EchoSphere
         if (delayLine.getMaximumDelayInSamples() <= 0)
             return inputSample; // Pass through if not initialized
             
-        // Make sure delay time is valid, with a minimum of 1 sample
-        float validDelayTime = juce::jmax(1.0f, juce::jmin(delayTimeInSamples, static_cast<float>(delayLine.getMaximumDelayInSamples() - 1)));
+        // Calculate minimum viable delay (at least 1 sample but allow fractional values for interpolation)
+        float minDelayTime = 0.1f; // Minimum of 0.1 samples for interpolation
+        
+        // Make sure delay time is valid between minimum and maximum
+        float validDelayTime = juce::jmax(minDelayTime, 
+                                         juce::jmin(delayTimeInSamples, 
+                                                   static_cast<float>(delayLine.getMaximumDelayInSamples() - 1)));
         
         // Get delayed sample safely
         float delaySample;
